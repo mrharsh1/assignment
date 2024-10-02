@@ -6,7 +6,7 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 const corsOptions = {
-    origin: 'http://localhost:3000',  // Allow requests from your React app running on this port
+    origin: 'https://assignment-alpha-two.vercel.app/',  // Allow requests from your React app running on this port
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,  // Allow credentials (cookies, authorization headers, etc.)
     optionsSuccessStatus: 204
