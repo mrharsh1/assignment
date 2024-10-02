@@ -35,7 +35,7 @@ const AllData = () => {
 
   const fetchEmployeeData = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/data');
+      const response = await axios.get('https://assignment-05q5.onrender.com/api/data');
       setEmployeeData(response.data.data || []); // Ensure that employeeData is always an array
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -66,7 +66,7 @@ const AllData = () => {
         End_Date: formattedEndDate,
       };
 
-      await axios.put(`http://localhost:5000/api/update/${formData.Employee_Id}`, updatedFormData);
+      await axios.put(`https://assignment-05q5.onrender.com/api/update/${formData.ID}`, updatedFormData);
       fetchEmployeeData();
       setEditIndex(null); // Reset edit index to close edit form
       setFormData({
@@ -89,7 +89,7 @@ const AllData = () => {
 
   const handleDelete = async (ID) => {
     try {
-      await axios.delete(`http://localhost:5000/api/delete/${ID}`);
+      await axios.delete(`https://assignment-05q5.onrender.com/api/delete/${ID}`);
       fetchEmployeeData(); // Refresh data after deletion
     } catch (error) {
       console.error('Error deleting data:', error);
