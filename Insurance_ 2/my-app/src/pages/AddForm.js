@@ -129,7 +129,7 @@ function AddForm() {
                     <em>None</em>
                   </MenuItem>
                   <MenuItem value="Sales">Sales</MenuItem>
-                  <MenuItem value="Marketing<">Marketing</MenuItem>
+                  <MenuItem value="Marketing">Marketing</MenuItem>
                   <MenuItem value="Operations">Operations</MenuItem>
                   <MenuItem value="Finance">Finance</MenuItem>
                   <MenuItem value="Packaging">Packaging</MenuItem>
