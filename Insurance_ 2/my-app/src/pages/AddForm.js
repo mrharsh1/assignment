@@ -59,7 +59,7 @@ function AddForm() {
     };
 
     try {
-      const response = await axios.post('http://localhost:5000/api/submit', payload);
+      const response = await axios.post('https://assignment-05q5.onrender.com/api/submit', payload);
       console.log('Server response:', response);
       if (response.status === 200) {
         setSuccess('Form submitted successfully');
