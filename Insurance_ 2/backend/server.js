@@ -20,7 +20,7 @@ const corsOptions = {
 app.get('/api/data', async (req, res) => {
   try {
     const response = await axios.get(process.env.ZOHO_API_URL, {
-      headers: { Authorization: `Zoho-oauthtoken ${process.env.ZOHO_ACCESS_TOKEN}` }
+      headers: { Authorization: `Zoho-oauthtoken 1000.ca6c91e135219e605fd0958a5f84e7a4.6d4987d295c31c164ebd1b01d3c80394` }
     });
     res.json(response.data);
   } catch (error) {
