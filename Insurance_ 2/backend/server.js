@@ -98,7 +98,7 @@ app.delete('/api/delete/:ID', async (req, res) => {
         `https://creator.zoho.in/api/v2/dev_it/my-first-project/report/All_Leave_Requests/${ID}`,  // Add the ID to the URL
         {
           headers: {
-            Authorization: `Zoho-oauthtoken ${process.env.ZOHO_ACCESS_TOKEN}`,
+            Authorization: `Zoho-oauthtoken  ${process.env.ZOHO_ACCESS_TOKEN}`,
           },
           timeout: 10000
         }
@@ -119,7 +119,7 @@ app.put('/api/update/:ID', async (req, res) => {
         { data: req.body }, // Data from the request body to update
         {
           headers: {
-            Authorization: `Zoho-oauthtoken ${process.env.ZOHO_ACCESS_TOKEN}`,
+            Authorization: `Zoho-oauthtoken  ${process.env.ZOHO_ACCESS_TOKEN}`,
             'Content-Type': 'application/json',
           },
           timeout: 10000
