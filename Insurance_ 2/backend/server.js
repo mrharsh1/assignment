@@ -8,16 +8,26 @@ const app = express();
 app.use(express.json());
 
 const corsOptions = {
-  origin: 'http://localhost:3000', // Allow requests from your React app running on this port
+  origin: 'https://assignment-alpha-two.vercel.app/', // Allow requests from your React app running on this port
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204
 };
 app.use(cors(corsOptions));
 
+let accessToken = process.env.ZOHO_ACCESS_TOKEN; // In-memory storage for access token
+let tokenExpiryTime = Date.now() + 3600 * 1000; // Set token expiry time
+
 // Function to refresh the access token
 const refreshAccessToken = async () => {
   try {
+    const currentTime = Date.now();
+    
+    if (currentTime < tokenExpiryTime) {
+      // If the token is still valid, return the cached token
+      return accessToken;
+    }
+
     const response = await axios.post(`https://accounts.zoho.com/oauth/v2/token`, null, {
       params: {
         refresh_token: process.env.ZOHO_REFRESH_TOKEN,
@@ -26,10 +36,11 @@ const refreshAccessToken = async () => {
         grant_type: 'refresh_token'
       }
     });
-    // Update the access token in the environment variables (or use in-memory variable)
-    process.env.ZOHO_ACCESS_TOKEN = response.data.access_token;
-    console.log('Access token refreshed:', process.env.ZOHO_ACCESS_TOKEN);
-    return response.data.access_token;
+
+    accessToken = response.data.access_token; // Update the in-memory access token
+    tokenExpiryTime = Date.now() + response.data.expires_in * 1000; // Update the expiry time
+    console.log('Access token refreshed:', accessToken);
+    return accessToken;
   } catch (error) {
     console.error('Failed to refresh access token:', error);
     throw error;
