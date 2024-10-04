@@ -7,8 +7,11 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
+const PORT = process.env.PORT || 5000; // Avoid hardcoding port numbers like 10000
+
+
 const corsOptions = {
-  origin: 'https://assignment-alpha-two.vercel.app/', // Allow requests from your React app running on this port
+  origin: '*', // Allow requests from your React app running on this port
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204
