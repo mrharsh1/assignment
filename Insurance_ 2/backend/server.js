@@ -15,7 +15,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 let accessToken = process.env.ZOHO_ACCESS_TOKEN; // In-memory storage for access token
-let tokenExpiryTime = Date.now() + 3000 * 1000; // Set token expiry time
+let tokenExpiryTime = Date.now() + 3600 * 1000; // Set token expiry time
 let isRefreshing = false; // Flag to check if the token is being refreshed
 let failedQueue = []; // Queue to store failed requests during the refresh process
 
