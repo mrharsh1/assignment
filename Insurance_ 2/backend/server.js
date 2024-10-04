@@ -8,14 +8,15 @@ const app = express();
 app.use(express.json());
 
 const corsOptions = {
-  origin: 'http://localhost:3000', // Allow requests from your React app running on this port
+  origin: 'https://assignment-alpha-two.vercel.app/', // Allow requests from your React app running on this port
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204
 };
 app.use(cors(corsOptions));
+const TOKEN_REFRESH_BUFFER = 600 * 1000; // 10 minutes in milliseconds
 let accessToken = process.env.ZOHO_ACCESS_TOKEN; // In-memory storage for access token
-let tokenExpiryTime = Date.now() + 3600 * 1000; // Set token expiry time
+let tokenExpiryTime = Date.now() + 3600 * 1000; // Set token expiry time (1 hour)
 let isRefreshing = false; // Flag to check if the token is being refreshed
 let failedQueue = []; // Queue to store failed requests during the refresh process
 
@@ -35,13 +36,14 @@ const processQueue = (error, token = null) => {
 const refreshAccessToken = async () => {
   const currentTime = Date.now();
 
-  if (currentTime < tokenExpiryTime && accessToken) {
+  // Check if the token is still valid with buffer time before it expires
+  if (currentTime < tokenExpiryTime - TOKEN_REFRESH_BUFFER && accessToken) {
     // If the token is still valid, return the cached token
     return accessToken;
   }
 
+  // If another refresh is already in progress, queue this request
   if (isRefreshing) {
-    // If a refresh is already in progress, return a promise that resolves once the refresh is complete
     return new Promise((resolve, reject) => {
       failedQueue.push({ resolve, reject });
     });
@@ -50,6 +52,7 @@ const refreshAccessToken = async () => {
   isRefreshing = true;
 
   try {
+    // Request to refresh the access token
     const response = await axios.post(`https://accounts.zoho.in/oauth/v2/token`, null, {
       params: {
         refresh_token: process.env.ZOHO_REFRESH_TOKEN,
@@ -90,8 +93,9 @@ apiClient.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
 
-    if (error.response && error.response.status === 401 && !originalRequest._retry) { 
-      originalRequest._retry = true; // Flag to avoid infinite loops
+    // If we get a 401 error, the token has expired
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true; // Flag to avoid infinite retry loops
       console.log('Access token expired, refreshing...');
       try {
         const newAccessToken = await refreshAccessToken(); // Refresh the token
@@ -102,9 +106,10 @@ apiClient.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error); // If the error is something else, reject it
+    return Promise.reject(error); // For other errors, reject the request
   }
 );
+
 
 // Example of using the apiClient to fetch data from Zoho
 app.get('/api/data', async (req, res) => {
