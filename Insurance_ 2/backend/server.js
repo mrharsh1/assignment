@@ -7,7 +7,6 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 5000; // Avoid hardcoding port numbers like 10000
 
 
 const corsOptions = {
