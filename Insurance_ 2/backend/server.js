@@ -7,8 +7,6 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
-
-
 const corsOptions = {
   origin: '*', // Allow requests from your React app running on this port
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
