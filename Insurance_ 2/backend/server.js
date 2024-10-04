@@ -8,27 +8,49 @@ const app = express();
 app.use(express.json());
 
 const corsOptions = {
-  origin: 'https://assignment-alpha-two.vercel.app/', // Allow requests from your React app running on this port
+  origin: 'http://localhost:3000', // Allow requests from your React app running on this port
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204
 };
 app.use(cors(corsOptions));
-
 let accessToken = process.env.ZOHO_ACCESS_TOKEN; // In-memory storage for access token
-let tokenExpiryTime = Date.now() + 3600 * 1000; // Set token expiry time
+let tokenExpiryTime = Date.now() + 3000 * 1000; // Set token expiry time
+let isRefreshing = false; // Flag to check if the token is being refreshed
+let failedQueue = []; // Queue to store failed requests during the refresh process
+
+// Function to process the failed requests after refreshing the token
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (token) {
+      prom.resolve(token);
+    } else {
+      prom.reject(error);
+    }
+  });
+  failedQueue = [];
+};
 
 // Function to refresh the access token
 const refreshAccessToken = async () => {
-  try {
-    const currentTime = Date.now();
-    
-    if (currentTime < tokenExpiryTime) {
-      // If the token is still valid, return the cached token
-      return accessToken;
-    }
+  const currentTime = Date.now();
 
-    const response = await axios.post(`https://accounts.zoho.com/oauth/v2/token`, null, {
+  if (currentTime < tokenExpiryTime && accessToken) {
+    // If the token is still valid, return the cached token
+    return accessToken;
+  }
+
+  if (isRefreshing) {
+    // If a refresh is already in progress, return a promise that resolves once the refresh is complete
+    return new Promise((resolve, reject) => {
+      failedQueue.push({ resolve, reject });
+    });
+  }
+
+  isRefreshing = true;
+
+  try {
+    const response = await axios.post(`https://accounts.zoho.in/oauth/v2/token`, null, {
       params: {
         refresh_token: process.env.ZOHO_REFRESH_TOKEN,
         client_id: process.env.ZOHO_CLIENT_ID,
@@ -39,9 +61,13 @@ const refreshAccessToken = async () => {
 
     accessToken = response.data.access_token; // Update the in-memory access token
     tokenExpiryTime = Date.now() + response.data.expires_in * 1000; // Update the expiry time
+    isRefreshing = false;
+    processQueue(null, accessToken); // Resolve all queued requests with the new token
     console.log('Access token refreshed:', accessToken);
     return accessToken;
   } catch (error) {
+    isRefreshing = false;
+    processQueue(error, null); // Reject all queued requests with the error
     console.error('Failed to refresh access token:', error);
     throw error;
   }
@@ -50,15 +76,32 @@ const refreshAccessToken = async () => {
 // Axios instance with interceptor to automatically refresh the token
 const apiClient = axios.create();
 
+apiClient.interceptors.request.use(
+  async config => {
+    const token = await refreshAccessToken(); // Ensure that we have a valid token before making the request
+    config.headers['Authorization'] = `Zoho-oauthtoken ${token}`; // Set the token in the Authorization header
+    return config;
+  },
+  error => Promise.reject(error)
+);
+
 apiClient.interceptors.response.use(
   response => response, // If the response is successful, return it
   async error => {
-    if (error.response && error.response.status === 401) { // If the access token has expired
+    const originalRequest = error.config;
+
+    if (error.response && error.response.status === 401 && !originalRequest._retry) { 
+      originalRequest._retry = true; // Flag to avoid infinite loops
       console.log('Access token expired, refreshing...');
-      const newAccessToken = await refreshAccessToken(); // Refresh the token
-      error.config.headers['Authorization'] = `Zoho-oauthtoken ${newAccessToken}`; // Set the new token in the header
-      return apiClient.request(error.config); // Retry the failed request with the new token
+      try {
+        const newAccessToken = await refreshAccessToken(); // Refresh the token
+        originalRequest.headers['Authorization'] = `Zoho-oauthtoken ${newAccessToken}`; // Set the new token in the header
+        return apiClient(originalRequest); // Retry the failed request with the new token
+      } catch (err) {
+        return Promise.reject(err); // If the token refresh fails, reject the request
+      }
     }
+
     return Promise.reject(error); // If the error is something else, reject it
   }
 );
